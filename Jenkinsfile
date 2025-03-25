@@ -17,8 +17,7 @@ sh 'sleep 2' // Simulation des tests unitaires
  }
  stage('Analyse Qualité') {
  steps {
- echo "Analyse statique du code avec 
-SonarQube..."
+ echo "Analyse statique du code avec SonarQube..."
  sh 'sleep 4' // Simulation de l’analyse
  }
  }
