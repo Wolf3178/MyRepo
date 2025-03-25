@@ -1,28 +1,34 @@
 pipeline {
- agent any
- stages {
- stage('Build') {
- steps {
- script {
- try {
- echo "Compilation en cours..."
-sh 'exit 1' // Simulation d'une erreur
- } catch (Exception e) {
- echo "Erreur détectée dans le build !"
-currentBuild.result = 'FAILURE'
- }
- }
- }
- }
- }
- post {
- failure {
- echo "Le pipeline a échoué, envoi d’une notification..."
- sh 'echo "Erreur détectée" > erreur.log'
- archiveArtifacts artifacts: 'erreur.log', fingerprint: true
- }
- success {
- echo "Pipeline exécuté avec succès !"
- }
- }
+    agent {
+        docker {
+            image 'maven:3.9.2-amazoncorretto-17-debian-bookworm'
+            args '-v /root/.m2:/root/.m2'
+        }
+    }
+environment {
+        MAVEN_OPTS = "-Dmaven.repo.local=/tmp/.m2/repository"
+    }
+    stages {
+        stage('Build') {
+            steps {
+                sh 'mvn -B -DskipTests clean package'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'mvn test'
+            }
+            post {
+                always {
+                    junit 'target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        stage('Deliver') {
+            steps {
+                sh './jenkins/scripts/deliver.sh'
+            }
+        }
+    }
 }
